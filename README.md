@@ -19,11 +19,11 @@ and different memory types.
 
 # How to do anything useful with this?
 
-## SD/MMC devices
+## eMMC devices
 
-Connect your SD/MMC chip to the STM32F103 board:
+Connect your eMMC chip to the STM32F103 board:
 
-SD/MMC pin | F103 pin
+eMMC pin | F103 pin
 -------|---------
 CLK | PC12
 CMD | PD2
