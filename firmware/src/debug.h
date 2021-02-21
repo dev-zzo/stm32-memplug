@@ -1,6 +1,18 @@
 #ifndef __debug_h
 #define __debug_h
 
+/* Debug interface implementation, based on SWO */
+
+/*
+Technical notes:
+
+- ST-LINK only starts displaying the trace after reconnecting to the target!
+- Modding ST-LINK v2 for SWO:
+  https://research.kudelskisecurity.com/2020/04/15/swd-part-3-swo-and-nrst/
+*/
+
+#ifdef _DEBUG
+
 void DEBUG_Init(void);
 
 void DEBUG_PrintChar_(char x);
@@ -9,8 +21,6 @@ void DEBUG_PrintHex_(const void *p, unsigned n);
 void DEBUG_PrintU8_(uint8_t value);
 void DEBUG_PrintU16_(uint16_t value);
 void DEBUG_PrintU32_(uint32_t value);
-
-#if 1
 
 #define DEBUG_PrintChar(c) DEBUG_PrintChar_(c)
 #define DEBUG_PrintString(s) DEBUG_PrintString_(s)
