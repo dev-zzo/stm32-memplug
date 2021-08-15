@@ -13,6 +13,8 @@ Technical notes:
 
 #ifdef _DEBUG
 
+#include <stdint.h>
+
 void DEBUG_Init(void);
 
 void DEBUG_PrintChar_(char x);

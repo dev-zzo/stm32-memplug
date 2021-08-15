@@ -19,6 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
+#include "debug.h"
 
 /** @addtogroup STM32F1xx_HAL_Examples
   * @{
@@ -50,7 +51,7 @@ void HAL_MspInit(void)
 
 /**
   * @brief  DeInitializes the Global MSP.
-  * @param  None  
+  * @param  None
   * @retval None
   */
 void HAL_MspDeInit(void)
@@ -64,9 +65,14 @@ void HAL_MspDeInit(void)
   */
 void HAL_MMC_MspInit(MMC_HandleTypeDef* hsd)
 {
-    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitTypeDef gpio;
 
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    __HAL_RCC_GPIOC_RELEASE_RESET();
+    __HAL_RCC_GPIOD_RELEASE_RESET();
     __HAL_RCC_SDIO_CLK_ENABLE();
+    __HAL_RCC_AFIO_CLK_ENABLE();
 
     /**SDIO GPIO Configuration
     PC12    ------> SDIO_CK
@@ -81,25 +87,116 @@ void HAL_MMC_MspInit(MMC_HandleTypeDef* hsd)
     PC8     ------> SDIO_D0
     */
 
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
-    GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_11|GPIO_PIN_10|GPIO_PIN_9|GPIO_PIN_8;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-    GPIO_InitStruct.Pin = GPIO_PIN_2;
-    HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+    gpio.Mode = GPIO_MODE_AF_PP;
+    gpio.Pull = GPIO_PULLUP;
+    gpio.Speed = GPIO_SPEED_FREQ_HIGH;
+
+    gpio.Pin = GPIO_PIN_12|GPIO_PIN_11|GPIO_PIN_10|GPIO_PIN_9|GPIO_PIN_8;
+    HAL_GPIO_Init(GPIOC, &gpio);
+
+    gpio.Pin = GPIO_PIN_2;
+    HAL_GPIO_Init(GPIOD, &gpio);
 }
 
 /**
-  * @}
+  * @brief  Initializes the FSMC NOR MSP.
+  * @param  hmmc: Pointer to NOR handle
+  * @retval None
   */
+void HAL_NOR_MspInit(NOR_HandleTypeDef *hnor)
+{
+	GPIO_InitTypeDef gpio;
 
-/**
-  * @}
-  */
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    __HAL_RCC_GPIOE_CLK_ENABLE();
+    __HAL_RCC_GPIOF_CLK_ENABLE();
+    __HAL_RCC_GPIOG_CLK_ENABLE();
+    __HAL_RCC_GPIOA_RELEASE_RESET();
+    __HAL_RCC_GPIOD_RELEASE_RESET();
+    __HAL_RCC_GPIOE_RELEASE_RESET();
+    __HAL_RCC_GPIOF_RELEASE_RESET();
+    __HAL_RCC_GPIOG_RELEASE_RESET();
+    __HAL_RCC_AFIO_CLK_ENABLE();
 
-/**
-  * @}
-  */
+    gpio.Pull = GPIO_PULLUP;
+    gpio.Speed = GPIO_SPEED_FREQ_HIGH;
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+    gpio.Mode = GPIO_MODE_OUTPUT_PP;
+    gpio.Pin = GPIO_PIN_8;
+    HAL_GPIO_Init(GPIOA, &gpio);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+
+    gpio.Mode = GPIO_MODE_AF_PP;
+    gpio.Pin =
+         GPIO_PIN_0
+        |GPIO_PIN_1
+        |GPIO_PIN_4
+        |GPIO_PIN_5
+        |GPIO_PIN_7
+        |GPIO_PIN_8
+        |GPIO_PIN_9
+        |GPIO_PIN_10
+        |GPIO_PIN_11
+        |GPIO_PIN_12
+        |GPIO_PIN_13
+        |GPIO_PIN_14
+        |GPIO_PIN_15
+        ;
+    HAL_GPIO_Init(GPIOD, &gpio);
+
+    gpio.Pin =
+         GPIO_PIN_2
+        |GPIO_PIN_3
+        |GPIO_PIN_4
+        |GPIO_PIN_5
+        |GPIO_PIN_6
+        |GPIO_PIN_7
+        |GPIO_PIN_8
+        |GPIO_PIN_9
+        |GPIO_PIN_10
+        |GPIO_PIN_11
+        |GPIO_PIN_12
+        |GPIO_PIN_13
+        |GPIO_PIN_14
+        |GPIO_PIN_15
+        ;
+    HAL_GPIO_Init(GPIOE, &gpio);
+
+    gpio.Pin =
+         GPIO_PIN_0
+        |GPIO_PIN_1
+        |GPIO_PIN_2
+        |GPIO_PIN_3
+        |GPIO_PIN_4
+        |GPIO_PIN_5
+        |GPIO_PIN_12
+        |GPIO_PIN_13
+        |GPIO_PIN_14
+        |GPIO_PIN_15
+        ;
+    HAL_GPIO_Init(GPIOF, &gpio);
+
+    gpio.Pin =
+         GPIO_PIN_0
+        |GPIO_PIN_1
+        |GPIO_PIN_2
+        |GPIO_PIN_3
+        |GPIO_PIN_4
+        |GPIO_PIN_5
+        |GPIO_PIN_13
+        |GPIO_PIN_14
+        ;
+    HAL_GPIO_Init(GPIOG, &gpio);
+
+    gpio.Pin = GPIO_PIN_6;
+    gpio.Mode = GPIO_MODE_INPUT;
+    gpio.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(GPIOD, &gpio);
+
+    __HAL_RCC_FSMC_CLK_ENABLE();
+
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+
+    DEBUG_PrintString("HAL_NOR_MspInit done\n");
+}

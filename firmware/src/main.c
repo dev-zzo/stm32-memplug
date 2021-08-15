@@ -2,15 +2,21 @@
 #include "debug.h"
 #include "usb_device.h"
 
-MMC_HandleTypeDef uSdHandle;
-extern PCD_HandleTypeDef hpcd_USB_FS;
+HAL_StatusTypeDef MMC_Setup(void);
+HAL_StatusTypeDef NOR_Setup(void);
+HAL_StatusTypeDef NAND_Setup(void);
 
-void led_activity(int state)
+extern const MD_CmdHanderEntry_t NOR_Handlers[];
+extern const MD_CmdHanderEntry_t NAND_Handlers[];
+
+uint8_t PageBuffer[8192];
+
+void LED_Activity(char state)
 {
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, state ? GPIO_PIN_RESET : GPIO_PIN_SET);
 }
 
-void SystemClock_Config(void)
+static void SystemClock_Config(void)
 {
     RCC_ClkInitTypeDef clkinitstruct = {0};
     RCC_OscInitTypeDef oscinitstruct = {0};
@@ -29,104 +35,15 @@ void SystemClock_Config(void)
 
     /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
      clocks dividers */
-    clkinitstruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
-    clkinitstruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-    clkinitstruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+    clkinitstruct.ClockType      = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+    clkinitstruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
+    clkinitstruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
     clkinitstruct.APB2CLKDivider = RCC_HCLK_DIV1;
     clkinitstruct.APB1CLKDivider = RCC_HCLK_DIV2;
     if (HAL_RCC_ClockConfig(&clkinitstruct, FLASH_LATENCY_2) != HAL_OK) {
         /* Initialization Error */
         while(1);
     }
-}
-
-int MMC_Init(void)
-{
-    HAL_StatusTypeDef Status;
-
-    /* uSD device interface configuration */
-    uSdHandle.Instance = SDIO;
-    uSdHandle.Init.ClockEdge           = SDIO_CLOCK_EDGE_RISING;
-    uSdHandle.Init.ClockBypass         = SDIO_CLOCK_BYPASS_DISABLE;
-    uSdHandle.Init.ClockPowerSave      = SDIO_CLOCK_POWER_SAVE_DISABLE;
-    uSdHandle.Init.BusWide             = SDIO_BUS_WIDE_1B;
-    uSdHandle.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-    uSdHandle.Init.ClockDiv            = SDIO_TRANSFER_CLK_DIV;
-
-    Status = HAL_MMC_Init(&uSdHandle);
-    if(Status != HAL_OK) {
-        DEBUG_PrintString("MMC init failed: "); DEBUG_PrintU32(Status); DEBUG_PrintChar('\n');
-        return 0;
-    }
-
-#if 0
-    if(HAL_MMC_ConfigWideBusOperation(&uSdHandle, SDIO_BUS_WIDE_1B) != HAL_OK) {
-        DEBUG_PrintString("MMC bus width setting failed\n");
-        return 0;
-    }
-#endif
-
-    return 1;
-}
-
-static void setup(void)
-{
-	GPIO_InitTypeDef GPIO_InitStruct;
-    /* Run through HAL init stuff */
-    HAL_Init();
-
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-    __HAL_RCC_GPIOD_CLK_ENABLE();
-    __HAL_RCC_AFIO_CLK_ENABLE();
-    //__HAL_AFIO_REMAP_SWJ_NOJTAG();
-
-    SystemClock_Config();
-
-    /* Init the debug prints */
-#ifdef _DEBUG
-    DEBUG_Init();
-    DEBUG_PrintString("I'm alive\n");
-#endif
-
-    /* Setup activity LED on PC13 */
-	GPIO_InitStruct.Pin = GPIO_PIN_13;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-    led_activity(0);
-
-    if (!MMC_Init()) {
-        /* What do we want to report here and how? */
-    }
-}
-
-int SDCardWriteSect(uint8_t* bufferOut, uint32_t sector, uint16_t count)
-{
-    HAL_StatusTypeDef status;
-    led_activity(1);
-    status = HAL_MMC_WriteBlocks(&uSdHandle, bufferOut, sector, count, 0xFFFF);
-    led_activity(0);
-    return status == HAL_OK;
-}
-
-int SDCardReadSect(uint8_t* bufferOut, uint32_t sector, uint16_t count)
-{
-    HAL_StatusTypeDef status;
-    led_activity(1);
-    status = HAL_MMC_ReadBlocks(&uSdHandle, bufferOut, sector, count, 0xFFFF);
-    led_activity(0);
-    return status == HAL_OK;
-}
-
-uint32_t SDCardSectorCount()
-{
-    HAL_MMC_CardInfoTypeDef info;
-    if (HAL_OK == HAL_MMC_GetCardInfo(&uSdHandle, &info)) {
-        return info.LogBlockNbr;
-    }
-    return 0;
 }
 
 void *memset(void *dst, int c, size_t n)
@@ -140,14 +57,71 @@ void *memset(void *dst, int c, size_t n)
 
 int main()
 {
-    HAL_MMC_CardInfoTypeDef info;
-    setup();
+    /* Run through HAL init stuff */
+    HAL_Init();
+
+    __HAL_RCC_AFIO_CLK_ENABLE();
+    //__HAL_AFIO_REMAP_SWJ_NOJTAG();
+
+    SystemClock_Config();
+
+    /* Init the debug prints */
+#ifdef _DEBUG
+    DEBUG_Init();
+    DEBUG_PrintString("I'm alive\n");
+#endif
+
+    GPIO_InitTypeDef gpio;
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    /* Setup activity LED on PC13 */
+    gpio.Pin = GPIO_PIN_13;
+    gpio.Mode = GPIO_MODE_OUTPUT_PP;
+    gpio.Speed = GPIO_SPEED_FREQ_MEDIUM;
+    HAL_GPIO_Init(GPIOC, &gpio);
+    LED_Activity(0);
+
+    /* Setup PA3..0 as inputs with pull-ups */
+    gpio.Pin = GPIO_PIN_3|GPIO_PIN_2|GPIO_PIN_1|GPIO_PIN_0;
+    gpio.Mode = GPIO_MODE_INPUT;
+    gpio.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(GPIOA, &gpio);
+
+    HAL_StatusTypeDef Status;
+    int top_id =
+          (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) << 3)
+        | (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2) << 2)
+        | (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) << 1)
+        | (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) << 0);
+    DEBUG_PrintString("Top board ID: ");
+    switch (top_id) {
+    case 0x0:
+        DEBUG_PrintString("eMMC rev A\n");
+        USBD_SetProduct(0x5720, "STM32-MemPlug: eMMC");
+        Status = MMC_Setup();
+        break;
+    case 0x1:
+        DEBUG_PrintString("NAND rev A\n");
+        USBD_SetProduct(0x5721, "STM32-MemPlug: NAND");
+        Status = NAND_Setup();
+        USBD_RegisterCommands(NAND_Handlers);
+        break;
+    case 0x3:
+        DEBUG_PrintString("NOR rev A\n");
+        USBD_SetProduct(0x5723, "STM32-MemPlug: NOR");
+        Status = NOR_Setup();
+        USBD_RegisterCommands(NOR_Handlers);
+        break;
+    default:
+        DEBUG_PrintString("UNKNOWN: ");
+        DEBUG_PrintChar('A' + top_id);
+        DEBUG_PrintChar('\n');
+        USBD_SetProduct(0x572F, "STM32-MemPlug: Unknown TOP");
+        break;
+    }
+
     MX_USB_DEVICE_Init();
 
-    HAL_MMC_GetCardInfo(&uSdHandle, &info);
-    DEBUG_PrintString("Card capacity: "); DEBUG_PrintU32(info.LogBlockNbr); DEBUG_PrintChar('\n');
-
-    //DEBUG_PrintString("\n\nThat's all folks!\n\n");
     for (;;) {
     }
 }
