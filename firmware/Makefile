@@ -9,9 +9,10 @@
 APP_OBJS= \
     main.o \
     debug.o \
-    mem_mmc.o \
-    mem_nor.o \
-    mem_nand.o \
+    mmc_handler.o \
+    nor_handler.o \
+    nor_driver.o \
+    nand_handler.o \
     stm32f1xx_it.o \
     stm32f1xx_hal_msp.o \
     usb_device.o \

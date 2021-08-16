@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
 #include "debug.h"
+#include "nor_driver.h"
 
 /** @addtogroup STM32F1xx_HAL_Examples
   * @{
@@ -103,7 +104,7 @@ void HAL_MMC_MspInit(MMC_HandleTypeDef* hsd)
   * @param  hmmc: Pointer to NOR handle
   * @retval None
   */
-void HAL_NOR_MspInit(NOR_HandleTypeDef *hnor)
+void NOR_MspInit(NOR_Handle_t *hnor)
 {
 	GPIO_InitTypeDef gpio;
 
@@ -198,5 +199,5 @@ void HAL_NOR_MspInit(NOR_HandleTypeDef *hnor)
 
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 
-    DEBUG_PrintString("HAL_NOR_MspInit done\n");
+    DEBUG_PrintString("NOR_MspInit done\n");
 }
