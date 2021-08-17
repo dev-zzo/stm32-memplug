@@ -22,7 +22,7 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 extern uint32_t ParamsStatusBuffer[16];
 
 /* USB_Device init function */	
-void MX_USB_DEVICE_Init(void);
+void MX_USB_DEVICE_Init(int do_msc);
 
 void USBD_SetProduct(uint16_t pid, const char *product);
 

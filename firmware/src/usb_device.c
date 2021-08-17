@@ -324,18 +324,18 @@ USBD_ClassTypeDef USBD_CustomClass = {
 };
 
 /* init function */
-void MX_USB_DEVICE_Init(void)
+void MX_USB_DEVICE_Init(int do_msc)
 {
     /* Init Device Library */
     USBD_Init(&hUsbDeviceFS, &FS_Desc, DEVICE_FS);
 
     /* The following depends on the mode we're initializing in */
-#if 0
-    USBD_RegisterClass(&hUsbDeviceFS, &USBD_MSC);
-    USBD_MSC_RegisterStorage(&hUsbDeviceFS, &USBD_Storage_Interface_fops_FS);
-#else
-    USBD_RegisterClass(&hUsbDeviceFS, &USBD_CustomClass);
-#endif
+    if (do_msc) {
+        USBD_RegisterClass(&hUsbDeviceFS, &USBD_MSC);
+        USBD_MSC_RegisterStorage(&hUsbDeviceFS, &USBD_Storage_Interface_fops_FS);
+    } else {
+        USBD_RegisterClass(&hUsbDeviceFS, &USBD_CustomClass);
+    }
 
     USBD_Start(&hUsbDeviceFS);
 }

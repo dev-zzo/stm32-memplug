@@ -120,8 +120,9 @@ int main()
         break;
     }
 
-    MX_USB_DEVICE_Init();
+    MX_USB_DEVICE_Init(top_id == 0x0);
 
     for (;;) {
+        __WFE();
     }
 }

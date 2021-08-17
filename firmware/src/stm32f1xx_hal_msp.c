@@ -48,6 +48,21 @@
   */
 void HAL_MspInit(void)
 {
+    GPIO_InitTypeDef gpio;
+
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOA_RELEASE_RESET();
+
+    gpio.Pin = GPIO_PIN_8;
+    gpio.Mode = GPIO_MODE_OUTPUT_PP;
+    gpio.Speed = GPIO_SPEED_FREQ_MEDIUM;
+    HAL_GPIO_Init(GPIOA, &gpio);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+}
+
+void MEM_ControlRST(int state)
+{
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, state ? GPIO_PIN_RESET : GPIO_PIN_SET);
 }
 
 /**
@@ -68,8 +83,10 @@ void HAL_MMC_MspInit(MMC_HandleTypeDef* hsd)
 {
     GPIO_InitTypeDef gpio;
 
+    __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOD_CLK_ENABLE();
+    __HAL_RCC_GPIOA_RELEASE_RESET();
     __HAL_RCC_GPIOC_RELEASE_RESET();
     __HAL_RCC_GPIOD_RELEASE_RESET();
     __HAL_RCC_SDIO_CLK_ENABLE();
@@ -86,6 +103,7 @@ void HAL_MMC_MspInit(MMC_HandleTypeDef* hsd)
     PC10    ------> SDIO_D2
     PC9     ------> SDIO_D1
     PC8     ------> SDIO_D0
+    PA8     ------> SDIO_nRST
     */
 
     gpio.Mode = GPIO_MODE_AF_PP;
@@ -97,6 +115,8 @@ void HAL_MMC_MspInit(MMC_HandleTypeDef* hsd)
 
     gpio.Pin = GPIO_PIN_2;
     HAL_GPIO_Init(GPIOD, &gpio);
+
+    MEM_ControlRST(0);
 }
 
 /**
@@ -108,12 +128,10 @@ void NOR_MspInit(NOR_Handle_t *hnor)
 {
 	GPIO_InitTypeDef gpio;
 
-    __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOD_CLK_ENABLE();
     __HAL_RCC_GPIOE_CLK_ENABLE();
     __HAL_RCC_GPIOF_CLK_ENABLE();
     __HAL_RCC_GPIOG_CLK_ENABLE();
-    __HAL_RCC_GPIOA_RELEASE_RESET();
     __HAL_RCC_GPIOD_RELEASE_RESET();
     __HAL_RCC_GPIOE_RELEASE_RESET();
     __HAL_RCC_GPIOF_RELEASE_RESET();
@@ -122,11 +140,6 @@ void NOR_MspInit(NOR_Handle_t *hnor)
 
     gpio.Pull = GPIO_PULLUP;
     gpio.Speed = GPIO_SPEED_FREQ_HIGH;
-
-    gpio.Mode = GPIO_MODE_OUTPUT_PP;
-    gpio.Pin = GPIO_PIN_8;
-    HAL_GPIO_Init(GPIOA, &gpio);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 
     gpio.Mode = GPIO_MODE_AF_PP;
     gpio.Pin =
@@ -197,5 +210,5 @@ void NOR_MspInit(NOR_Handle_t *hnor)
 
     __HAL_RCC_FSMC_CLK_ENABLE();
 
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+    MEM_ControlRST(0);
 }
