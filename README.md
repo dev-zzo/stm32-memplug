@@ -28,10 +28,10 @@ The toy relies on PA3..0 to detect which memory type it should configure:
 
 PA3..0 | Memory type
 -------|------------
-  0000 | eMMC
-  0001 | NAND
-  0011 | NOR
- Other | Reserved
+0000 | eMMC
+0001 | NAND
+0011 | NOR
+Other | Reserved
 
 If you forget to set those pins to known values, the board will show up as
 `STM32-MemPlug: Unknown TOP` in your USB devices.
@@ -42,9 +42,9 @@ Connect your eMMC chip to the STM32F103 board:
 
 eMMC pin | F103 pin
 ---------|---------
-     CLK | PC12
-     CMD | PD2
-      D0 | PC8
+CLK | PC12
+CMD | PD2
+D0 | PC8
 
 eMMC D1 through D7 are not used anyway at this point (see Performance).
 Remember to connect 3.3V and GND too! Note that some eMMC chips will require
@@ -66,52 +66,52 @@ The current firmware supports x16 parallel-NOR chips. Wire them up like this:
 
 NOR pin | F103 pin
 --------|---------
-     A0 | PF0
-     A1 | PF1
-     A2 | PF2
-     A3 | PF3
-     A4 | PF4
-     A5 | PF5
-     A6 | PF12
-     A7 | PF13
-     A8 | PF14
-     A9 | PF15
-    A10 | PG0
-    A11 | PG1
-    A12 | PG2
-    A13 | PG3
-    A14 | PG4
-    A15 | PG5
-    A16 | PD11
-    A17 | PD12
-    A18 | PD13
-    A19 | PE3
-    A20 | PE4
-    A21 | PE5
-    A22 | PE6
-    A23 | PE2
-    A24 | PG13
-    A15 | PG14
-     D0 | PD14
-     D1 | PD15
-     D2 | PD0
-     D3 | PD1
-     D4 | PE7
-     D5 | PE8
-     D6 | PE9
-     D7 | PE10
-     D8 | PE11
-     D9 | PE12
-    D10 | PE13
-    D11 | PE14
-    D12 | PE15
-    D13 | PD8
-    D14 | PD9
-    D15 | PD10
-    nCE | PD7
-    nOE | PD4
-    nWE | PD5
-    R/B | PD6
+ A0 | PF0
+ A1 | PF1
+ A2 | PF2
+ A3 | PF3
+ A4 | PF4
+ A5 | PF5
+ A6 | PF12
+ A7 | PF13
+ A8 | PF14
+ A9 | PF15
+A10 | PG0
+A11 | PG1
+A12 | PG2
+A13 | PG3
+A14 | PG4
+A15 | PG5
+A16 | PD11
+A17 | PD12
+A18 | PD13
+A19 | PE3
+A20 | PE4
+A21 | PE5
+A22 | PE6
+A23 | PE2
+A24 | PG13
+A15 | PG14
+ D0 | PD14
+ D1 | PD15
+ D2 | PD0
+ D3 | PD1
+ D4 | PE7
+ D5 | PE8
+ D6 | PE9
+ D7 | PE10
+ D8 | PE11
+ D9 | PE12
+D10 | PE13
+D11 | PE14
+D12 | PE15
+D13 | PD8
+D14 | PD9
+D15 | PD10
+nCE | PD7
+nOE | PD4
+nWE | PD5
+R/B | PD6
 
 Note the `R/B` signal might need a 10k pull-up; the internal pull-up might be
 too weak to be fast enough.
