@@ -12,11 +12,11 @@ to have.
 The hardware bit mostly relies on the FSMC unit to handle all the signalling
 for NOR, NAND, and eMMC chips.
 
-CAUTION: The hardware supports 3v3 chips only. 1v8 chips will be destroyed.
+**CAUTION**: The hardware supports 3v3 chips only. 1v8 chips **will** be destroyed.
 
 # Why would you even?
 
-> Science is not about /why/! It's about /why not/?
+> Science is not about *why*! It's about *why not*?
 
 This toy is meant for learning and experimenting, not for any kind of
 "professional work". Hack it and have fun while learning about the F103
