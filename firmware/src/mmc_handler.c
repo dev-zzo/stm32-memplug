@@ -28,8 +28,8 @@ HAL_StatusTypeDef MMC_Setup(void)
     }
     DEBUG_PrintString("MMC init OK\n");
 
-#if 0
-    Status = HAL_MMC_ConfigWideBusOperation(&Handle, SDIO_BUS_WIDE_1B);
+#if 1
+    Status = HAL_MMC_ConfigWideBusOperation(&Handle, SDIO_BUS_WIDE_4B);
     if (Status != HAL_OK) {
         DEBUG_PrintString("MMC bus width setting failed\n");
         return Status;
@@ -59,21 +59,74 @@ HAL_StatusTypeDef MMC_Setup(void)
     return HAL_OK;
 }
 
+static HAL_StatusTypeDef SDCardWait(unsigned timeout)
+{
+    uint32_t start = HAL_GetTick();
+    while (HAL_GetTick() - start < timeout) {
+        HAL_MMC_CardStateTypeDef state = HAL_MMC_GetCardState(&Handle);
+        switch (state) {
+            case HAL_MMC_CARD_TRANSFER:
+                return HAL_OK;
+
+            case HAL_SD_CARD_SENDING:
+            case HAL_SD_CARD_RECEIVING:
+            case HAL_SD_CARD_PROGRAMMING:
+                break;
+
+            default:
+                DEBUG_PrintString("Unexpected state ");
+                DEBUG_PrintU32(state);
+                DEBUG_PrintChar('\n');
+                return HAL_ERROR;
+        }
+        //HAL_Delay(5);
+    }
+    return HAL_TIMEOUT;
+}
+
 int SDCardWriteSect(uint8_t* bufferOut, uint32_t sector, uint16_t count)
 {
     HAL_StatusTypeDef status;
+    //DEBUG_PrintString(">WR\n");
     LED_Activity(1);
     status = HAL_MMC_WriteBlocks(&Handle, bufferOut, sector, count, 0xFFFF);
+    if (status == HAL_OK) {
+        status = SDCardWait(60000);
+    }
     LED_Activity(0);
+    if (status != HAL_OK) {
+        DEBUG_PrintString("WriteBlocks failed ");
+        DEBUG_PrintU32(sector);
+        DEBUG_PrintChar(' ');
+        DEBUG_PrintU16(count);
+        DEBUG_PrintChar(':');
+        DEBUG_PrintU32(Handle.ErrorCode);
+        DEBUG_PrintChar('\n');
+    }
+    //DEBUG_PrintString("<WR\n");
     return status == HAL_OK;
 }
 
 int SDCardReadSect(uint8_t* bufferOut, uint32_t sector, uint16_t count)
 {
     HAL_StatusTypeDef status;
+    //DEBUG_PrintString(">RD\n");
     LED_Activity(1);
     status = HAL_MMC_ReadBlocks(&Handle, bufferOut, sector, count, 0xFFFF);
+    if (status == HAL_OK) {
+        status = SDCardWait(60000);
+    }
     LED_Activity(0);
+    if (status != HAL_OK) {
+        DEBUG_PrintString("ReadBlocks failed ");
+        DEBUG_PrintU32(sector);
+        DEBUG_PrintChar(' ');
+        DEBUG_PrintU16(count);
+        DEBUG_PrintChar(':');
+        DEBUG_PrintU32(Handle.ErrorCode);
+        DEBUG_PrintChar('\n');
+    }
+    //DEBUG_PrintString("<RD\n");
     return status == HAL_OK;
 }
 
@@ -81,9 +134,6 @@ uint32_t SDCardSectorCount()
 {
     HAL_MMC_CardInfoTypeDef info;
     if (HAL_OK == HAL_MMC_GetCardInfo(&Handle, &info)) {
-        DEBUG_PrintString("Card size from GetCardInfo: ");
-        DEBUG_PrintU32(info.LogBlockNbr);
-        DEBUG_PrintChar('\n');
         return info.LogBlockNbr;
     }
     return 0;

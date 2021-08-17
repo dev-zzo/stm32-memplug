@@ -1,4 +1,5 @@
 #include <stm32f1xx.h>
+#include <stm32f1xx_ll_utils.h>
 #include "debug.h"
 #include "usb_device.h"
 
@@ -57,13 +58,16 @@ void *memset(void *dst, int c, size_t n)
 
 int main()
 {
+    SystemCoreClock = 72000000U;
+    SystemClock_Config();
+    SysTick_Config(SystemCoreClock / 1000);
+
     /* Run through HAL init stuff */
     HAL_Init();
+    __enable_irq();
 
     __HAL_RCC_AFIO_CLK_ENABLE();
     //__HAL_AFIO_REMAP_SWJ_NOJTAG();
-
-    SystemClock_Config();
 
     /* Init the debug prints */
 #ifdef _DEBUG

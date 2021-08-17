@@ -262,8 +262,6 @@ int8_t STORAGE_Write_FS (uint8_t lun,
 			return USBD_OK;
 		else
 			return USBD_FAIL;
-
-
 }
 
 /*******************************************************************************

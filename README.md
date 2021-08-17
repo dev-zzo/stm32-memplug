@@ -45,8 +45,12 @@ eMMC pin | F103 pin
 CLK | PC12
 CMD | PD2
 D0 | PC8
+D1 | PC9
+D2 | PC10
+D3 | PC11
+nRST | PA8
 
-eMMC D1 through D7 are not used anyway at this point (see Performance).
+eMMC D4 through D7 are not used anyway at this point (see Performance).
 Remember to connect 3.3V and GND too! Note that some eMMC chips will require
 connecting most or all power pads.
 
@@ -147,7 +151,7 @@ This is especially useful for BGA chips:
 
 The design is limited mostly by the USB unit of the F103 at the moment.
 The theoretical speed is no greater than 1MB/s, so don't expect blazing
-rates here. Dumping a 8GB MMC will take about 5-6 hours.
+rates here. Transfer speeds are about 250KB/s writing and 450KB/s reading.
 
 NOR Flash read speeds tend to land somewhere around 700KB/s.
 
