@@ -282,6 +282,9 @@ static void NOR_ProgramStreamedCallback(void)
         if (params->Count > PAGE_BUFFER_SIZE) {
             params->Count -= PAGE_BUFFER_SIZE;
             USBD_SetupWriting(&PageBuffer[0], MIN(params->Count, PAGE_BUFFER_SIZE), NOR_ProgramStreamedCallback);
+        } else {
+            /* For the last block, we can't report the error condition if any */
+            status->Status = MEM_OK;
         }
     } else {
         /* Stall and report back */
