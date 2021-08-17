@@ -9,6 +9,7 @@
 APP_OBJS= \
     main.o \
     debug.o \
+    fault_handler.o \
     mmc_handler.o \
     nor_handler.o \
     nor_driver.o \
@@ -49,6 +50,7 @@ LD=$(CROSS_COMPILE)ld
 SIZE=$(CROSS_COMPILE)size
 OBJCOPY=$(CROSS_COMPILE)objcopy
 
+ASFLAGS=-mthumb -mcpu=cortex-m3
 CFLAGS=-Wall -std=gnu99
 CFLAGS+=-mthumb -mcpu=cortex-m3
 CFLAGS+=-I./src -I./CMSIS/core -I./CMSIS/device -I./HAL_Driver/Inc -I./STM32_USB_Device_Library/Class/MSC/Inc -I./STM32_USB_Device_Library/Core/Inc

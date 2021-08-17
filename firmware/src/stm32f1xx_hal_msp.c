@@ -198,6 +198,4 @@ void NOR_MspInit(NOR_Handle_t *hnor)
     __HAL_RCC_FSMC_CLK_ENABLE();
 
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-
-    DEBUG_PrintString("NOR_MspInit done\n");
 }
