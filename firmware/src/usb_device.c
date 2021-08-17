@@ -12,7 +12,7 @@
 #include "usbd_desc.h"
 #include "usbd_msc.h"
 #include "usbd_storage_if.h"
-#include "mem_driver.h"
+#include "mem_handler.h"
 
 #define BULK_EPIN_ADDR 0x81
 #define BULK_EPOUT_ADDR 0x01
@@ -72,9 +72,12 @@ static uint8_t USBD_HandleRequest(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef
 
             } else {
                 /* Fire the handler as is */
-                Entry->Handler();
+                if (Entry->Handler() != MEM_OK) {
+                    USBD_CtlError(pdev, req);
+                    return USBD_FAIL;
+                }
             }
-            return 0;
+            return USBD_OK;
         }
         DEBUG_PrintString("No handler for CMD"); DEBUG_PrintU8(req->bRequest); DEBUG_PrintChar('\n');
     } else {
@@ -105,6 +108,7 @@ uint8_t USBD_ClassSetup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
             return USBD_HandleRequest(pdev, req);
         }
     }
+    USBD_CtlError(pdev, req);
     return USBD_FAIL;
 }
 
@@ -127,8 +131,11 @@ uint8_t USBD_ClassCtlTxSent(USBD_HandleTypeDef *pdev)
 uint8_t USBD_ClassCtlRxReady(USBD_HandleTypeDef *pdev)
 {
     USBD_ClassContext_t *ctx = (USBD_ClassContext_t *)pdev->pClassData;
-    ctx->Handler();
-    return 0;
+    if (ctx->Handler() != MEM_OK) {
+        USBD_CtlError(pdev, NULL);
+        return USBD_FAIL;
+    }
+    return USBD_OK;
 }
 
 /**

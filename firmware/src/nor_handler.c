@@ -110,9 +110,41 @@ typedef struct NOR_ReadStreamed_Params {
 static uint8_t NOR_ReadStreamed_Handler(void)
 {
     const NOR_ReadStreamed_Params *params = (const NOR_ReadStreamed_Params *)&ParamsStatusBuffer[0];
+    /* Dummy read operation */
     NOR_ReadData(&Handle, params->Address, (uint16_t *)&PageBuffer[0]);
+    /* Since NOR is memory-mapped, provide the buffer pointer directly */
     uint8_t *mmio = (uint8_t *)Handle.BankBase;
     USBD_SetupReading(&mmio[params->Address], params->Count, NULL);
+    return MEM_OK;
+}
+
+
+typedef struct NOR_BlankCheck_Params {
+    uint32_t Address;
+    uint32_t Count;
+} NOR_BlankCheck_Params;
+
+typedef struct NOR_BlankCheck_Status {
+    uint32_t Status;
+    uint32_t Address;
+    uint32_t Value;
+} NOR_BlankCheck_Status;
+
+static uint8_t NOR_BlankCheck_Handler(void)
+{
+    const NOR_BlankCheck_Params *params = (const NOR_BlankCheck_Params *)&ParamsStatusBuffer[0];
+    NOR_BlankCheck_Status *status = (NOR_BlankCheck_Status *)&ParamsStatusBuffer[0];
+    uint16_t Temp;
+    uint32_t Limit = params->Address + params->Count;
+    for (uint32_t Address = params->Address; Address < Limit; Address += 2) {
+        NOR_ReadData(&Handle, params->Address, &Temp);
+        if (Temp != 0xFFFFU) {
+            status->Status = 1;
+            status->Address = Address;
+            status->Value = Temp;
+            return MEM_FAIL;
+        }
+    }
     return MEM_OK;
 }
 
@@ -134,9 +166,16 @@ static uint8_t NOR_EraseBlock_Handler(void)
     }
     HAL_NOR_StatusTypeDef status = NOR_GetStatus(&Handle, params->Address, params->TimeoutMs);
     LED_Activity(0);
-    if (status != HAL_NOR_STATUS_SUCCESS) {
-        DEBUG_PrintString("NOR_EraseBlock: timed out\n");
-        return MEM_TIMEOUT;
+    switch (status) {
+        case HAL_NOR_STATUS_SUCCESS:
+            return MEM_OK;
+        case HAL_NOR_STATUS_ONGOING: /* should not occur, really */
+        case HAL_NOR_STATUS_TIMEOUT:
+            DEBUG_PrintString("EraseBlock: timed out\n");
+            return MEM_TIMEOUT;
+        case HAL_NOR_STATUS_ERROR:
+            DEBUG_PrintString("EraseBlock: failed\n");
+            return MEM_FAIL;
     }
     return MEM_OK;
 }
@@ -161,11 +200,12 @@ static uint8_t NOR_EraseChip_Handler(void)
     switch (status) {
         case HAL_NOR_STATUS_SUCCESS:
             return MEM_OK;
+        case HAL_NOR_STATUS_ONGOING: /* should not occur, really */
         case HAL_NOR_STATUS_TIMEOUT:
-            DEBUG_PrintString("NOR_EraseChip: timed out\n");
+            DEBUG_PrintString("EraseChip: timed out\n");
             return MEM_TIMEOUT;
         case HAL_NOR_STATUS_ERROR:
-            DEBUG_PrintString("NOR_EraseChip: failed\n");
+            DEBUG_PrintString("EraseChip: failed\n");
             return MEM_FAIL;
     }
     return MEM_OK;
@@ -179,8 +219,8 @@ typedef struct NOR_ProgramStreamed_Params {
 } NOR_ProgramStreamed_Params;
 
 typedef struct NOR_ProgramStreamed_Status {
+    uint32_t Status;
     uint32_t Address;
-    uint32_t Error;
 } NOR_ProgramStreamed_Status;
 
 #define NOR_PROGRAM_TIMEOUT 10
@@ -202,14 +242,14 @@ static void NOR_ProgramStreamedCallback(void)
             op_status = NOR_ProgramBuffer(&Handle, address, (uint16_t *)&PageBuffer[i], bytes / 2);
             if (op_status != HAL_OK) {
                 status->Address = address;
-                status->Error = MEM_FAIL;
+                status->Status = MEM_FAIL;
                 DEBUG_PrintString("ProgramBuffer failed\n");
                 break;
             }
             wait_status = NOR_GetStatus(&Handle, params->Address, NOR_PROGRAM_TIMEOUT);
             if (wait_status != HAL_NOR_STATUS_SUCCESS) {
                 status->Address = address;
-                status->Error = MEM_TIMEOUT;
+                status->Status = MEM_TIMEOUT;
                 DEBUG_PrintString("ProgramBuffer timed out\n");
                 break;
             }
@@ -221,14 +261,14 @@ static void NOR_ProgramStreamedCallback(void)
             op_status = NOR_ProgramData(&Handle, address, *(uint16_t *)&PageBuffer[i]);
             if (op_status != HAL_OK) {
                 status->Address = address;
-                status->Error = MEM_FAIL;
+                status->Status = MEM_FAIL;
                 DEBUG_PrintString("Program failed\n");
                 break;
             }
             wait_status = NOR_GetStatus(&Handle, address, NOR_PROGRAM_TIMEOUT);
             if (wait_status != HAL_NOR_STATUS_SUCCESS) {
                 status->Address = address;
-                status->Error = MEM_TIMEOUT;
+                status->Status = MEM_TIMEOUT;
                 DEBUG_PrintString("Program timed out\n");
                 break;
             }
@@ -263,6 +303,7 @@ const MD_CmdHanderEntry_t NOR_Handlers[] = {
     { 0x11, 0, NOR_ReadCFI_Handler },
     { 0x12, sizeof(NOR_ReadAutoSelect_Params), NOR_ReadAutoSelect_Handler },
     { 0x20, sizeof(NOR_ReadStreamed_Params), NOR_ReadStreamed_Handler },
+    { 0x21, sizeof(NOR_BlankCheck_Params), NOR_BlankCheck_Handler },
     { 0x30, sizeof(NOR_EraseBlock_Params), NOR_EraseBlock_Handler },
     { 0x31, sizeof(NOR_EraseChip_Params), NOR_EraseChip_Handler },
     { 0x40, sizeof(NOR_ProgramStreamed_Params), NOR_ProgramStreamed_Handler },
