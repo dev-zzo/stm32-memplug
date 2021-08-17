@@ -4,14 +4,19 @@ The `stm32-memplug` project aims to be a universal toy for playing with
 various memory ICs. As is obvious from the name, it is based on the STM32
 SoC series, more specifically the ever-popular STM32F103 chips.
 
-The software bit sits on top of the code kindly provided by the
+The firmware bit sits on top of the code kindly provided by the
 manufacturer, the "STM32CubeF1 MCU Firmware Package". At least some part
 of it will have to be rewritten later to support the flexibility I want it
 to have.
 
+The hardware bit mostly relies on the FSMC unit to handle all the signalling
+for NOR, NAND, and eMMC chips.
+
+CAUTION: The hardware supports 3v3 chips only. 1v8 chips will be destroyed.
+
 # Why would you even?
 
-> Science is not about why! It's about why not?
+> Science is not about /why/! It's about /why not/?
 
 This toy is meant for learning and experimenting, not for any kind of
 "professional work". Hack it and have fun while learning about the F103
@@ -51,9 +56,65 @@ If everything works fine, the device will appear as a simple USB mass storage
 when connected to the host system. When the chip is accessed, the PC13 LED
 will light up for visual confirmation.
 
+### Wishlist
+
+* Accessing boot partitions
+
 ## NOR devices
 
-That is yet to come. :-)
+The current firmware supports x16 parallel-NOR chips. Wire them up like this:
+
+NOR pin | F103 pin
+--------|---------
+     A0 | PF0
+     A1 | PF1
+     A2 | PF2
+     A3 | PF3
+     A4 | PF4
+     A5 | PF5
+     A6 | PF12
+     A7 | PF13
+     A8 | PF14
+     A9 | PF15
+    A10 | PG0
+    A11 | PG1
+    A12 | PG2
+    A13 | PG3
+    A14 | PG4
+    A15 | PG5
+    A16 | PD11
+    A17 | PD12
+    A18 | PD13
+    A19 | PE3
+    A20 | PE4
+    A21 | PE5
+    A22 | PE6
+    A23 | PE2
+    A24 | PG13
+    A15 | PG14
+     D0 | PD14
+     D1 | PD15
+     D2 | PD0
+     D3 | PD1
+     D4 | PE7
+     D5 | PE8
+     D6 | PE9
+     D7 | PE10
+     D8 | PE11
+     D9 | PE12
+    D10 | PE13
+    D11 | PE14
+    D12 | PE15
+    D13 | PD8
+    D14 | PD9
+    D15 | PD10
+    nCE | PD7
+    nOE | PD4
+    nWE | PD5
+    R/B | PD6
+
+Note the `R/B` signal might need a 10k pull-up; the internal pull-up might be
+too weak to be fast enough.
 
 ## NAND devices
 
@@ -68,7 +129,7 @@ compiler; for example, it's `~/x-tools/arm-none-eabi/bin/arm-none-eabi-` on my s
 
 # Building hardware
 
-If you don't want to wire the things all the time, several board designs have been
+If you don't want to wire small things all the time, several board designs have been
 created as a semi-permanent solution. You can find those designs under `hardware`.
 
 The general approach is, one "top" board is provided for each memory type, this goes
@@ -76,6 +137,11 @@ directly on top of the STM32F103ZE "minimal system board" (the cheapest option).
 The top board provides wiring and passives as needed and accepts a set of small
 footprint-specific boards; you can solder your target to those boards for reliable
 and fast connection.
+
+This is especially useful for BGA chips:
+
+* Removing them from the device-under-hack requires hot air / rework station anyway
+* Reballing the chip needs to be done anyway, doing it twice doesn't take as long
 
 # Performance
 
