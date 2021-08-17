@@ -50,3 +50,14 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+fp-info-cache
+fp-lib-table
+sym-lib-table
+*-cache.lib
+*.net
+*.kicad_pcb-bak
+*.sch-bak
+*.drl
+*.gbr
+*.gbrjob
