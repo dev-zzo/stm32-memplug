@@ -33,3 +33,5 @@ sym-lib-table
 *.drl
 *.gbr
 *.gbrjob
+Gerbers
+*.zip
