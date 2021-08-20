@@ -8,7 +8,7 @@ void LED_Activity(char state);
 
 static NOR_Handle_t Handle;
 
-HAL_StatusTypeDef NOR_Setup(void)
+HAL_StatusTypeDef NOR_Setup(int bus_x16)
 {
     HAL_StatusTypeDef status;
     FSMC_NORSRAM_InitTypeDef Init;
@@ -29,7 +29,7 @@ HAL_StatusTypeDef NOR_Setup(void)
     Init.NSBank               = FSMC_NORSRAM_BANK1;
     Init.DataAddressMux       = FSMC_DATA_ADDRESS_MUX_DISABLE;
     Init.MemoryType           = FSMC_MEMORY_TYPE_NOR;
-    Init.MemoryDataWidth      = FSMC_NORSRAM_MEM_BUS_WIDTH_16;
+    Init.MemoryDataWidth      = bus_x16 ? FSMC_NORSRAM_MEM_BUS_WIDTH_16 : FSMC_NORSRAM_MEM_BUS_WIDTH_8;
     Init.BurstAccessMode      = FSMC_BURST_ACCESS_MODE_DISABLE;
     Init.WaitSignal           = FSMC_WAIT_SIGNAL_DISABLE;
     Init.WaitSignalPolarity   = FSMC_WAIT_SIGNAL_POLARITY_LOW;

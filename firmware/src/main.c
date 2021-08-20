@@ -4,7 +4,7 @@
 #include "usb_device.h"
 
 HAL_StatusTypeDef MMC_Setup(void);
-HAL_StatusTypeDef NOR_Setup(void);
+HAL_StatusTypeDef NOR_Setup(int bus_x16);
 HAL_StatusTypeDef NAND_Setup(void);
 
 extern const MD_CmdHanderEntry_t NOR_Handlers[];
@@ -111,10 +111,16 @@ int main()
         Status = NAND_Setup();
         USBD_RegisterCommands(NAND_Handlers);
         break;
+    case 0x2:
+        DEBUG_PrintString("NOR x8 rev A\n");
+        USBD_SetProduct(0x5723, "STM32-MemPlug: NOR x8");
+        Status = NOR_Setup(0);
+        USBD_RegisterCommands(NOR_Handlers);
+        break;
     case 0x3:
-        DEBUG_PrintString("NOR rev A\n");
-        USBD_SetProduct(0x5723, "STM32-MemPlug: NOR");
-        Status = NOR_Setup();
+        DEBUG_PrintString("NOR x16 rev A/B\n");
+        USBD_SetProduct(0x5723, "STM32-MemPlug: NOR x16");
+        Status = NOR_Setup(1);
         USBD_RegisterCommands(NOR_Handlers);
         break;
     default:
