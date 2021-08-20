@@ -24,8 +24,6 @@
 
 # KiCAD stuff
 fp-info-cache
-fp-lib-table
-sym-lib-table
 *-cache.lib
 *.net
 *.kicad_pcb-bak
