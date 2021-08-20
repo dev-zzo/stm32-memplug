@@ -14,6 +14,7 @@ APP_OBJS= \
     nor_handler.o \
     nor_driver.o \
     nand_handler.o \
+    nand_driver.o \
     stm32f1xx_it.o \
     stm32f1xx_hal_msp.o \
     usb_device.o \
@@ -54,10 +55,15 @@ ASFLAGS=-mthumb -mcpu=cortex-m3
 CFLAGS=-Wall -std=gnu99
 CFLAGS+=-mthumb -mcpu=cortex-m3
 CFLAGS+=-I./src -I./CMSIS/core -I./CMSIS/device -I./HAL_Driver/Inc -I./STM32_USB_Device_Library/Class/MSC/Inc -I./STM32_USB_Device_Library/Core/Inc
-CFLAGS+=-DSTM32 -DSTM32F1 -DSTM32F103xE -DUSE_HAL_DRIVER -D_DEBUG
+CFLAGS+=-DSTM32 -DSTM32F1
+CFLAGS+=-DUSE_HAL_DRIVER -D_DEBUG
 CFLAGS+=-Os -ffunction-sections
-LDFLAGS+=-Tldscripts/STM32F103XE_FLASH.ld --gc-sections -Map $(OUTPUT).map
+LDFLAGS+=--gc-sections -Map $(OUTPUT).map
 LIBGCC:=$(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
+
+# EDIT: change to your device as needed
+CFLAGS+=-DSTM32F103xE
+LDFLAGS+=-Tldscripts/STM32F103XE_FLASH.ld
 
 # VPATH to support searching for CMSIS files
 VPATH=./src:./HAL_Driver/Src:./STM32_USB_Device_Library/Class/MSC/Src:./STM32_USB_Device_Library/Core/Src
