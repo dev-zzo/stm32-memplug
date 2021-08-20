@@ -58,8 +58,9 @@ void *memset(void *dst, int c, size_t n)
 
 int main()
 {
-    SystemCoreClock = 72000000U;
+    /* Setup clocks */
     SystemClock_Config();
+    SystemCoreClockUpdate();
     SysTick_Config(SystemCoreClock / 1000);
 
     /* Run through HAL init stuff */
@@ -129,4 +130,9 @@ int main()
     for (;;) {
         __WFE();
     }
+}
+
+void __libc_init_array(void)
+{
+    /* Unused as we don't use libc */
 }
