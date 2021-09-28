@@ -11,7 +11,6 @@
 *.map
 
 # Libraries
-*.lib
 *.a
 
 # Executables
