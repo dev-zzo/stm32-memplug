@@ -63,12 +63,21 @@ static uint8_t NOR_ReadID_Handler(void)
 }
 
 
+typedef struct NOR_ReadCFI_Params {
+    uint32_t Address;
+    uint32_t Count;
+} NOR_ReadCFI_Params;
+
 static uint8_t NOR_ReadCFI_Handler(void)
 {
+    const NOR_ReadCFI_Params *params = (const NOR_ReadCFI_Params *)&ParamsStatusBuffer[0];
     HAL_StatusTypeDef status;
+    if (params->Count > PAGE_BUFFER_SIZE / 2) {
+        return MEM_PARAMS;
+    }
     LED_Activity(1);
-    status = NOR_ReadCFI(&Handle, 0, (uint16_t *)&PageBuffer[0], 128);
-    for (int i = 0; i < 128; ++i) {
+    status = NOR_ReadCFI(&Handle, params->Address, (uint16_t *)&PageBuffer[0], params->Count);
+    for (int i = 0; i < params->Count; ++i) {
         PageBuffer[i] = PageBuffer[2*i];
     }
     LED_Activity(0);
@@ -76,7 +85,7 @@ static uint8_t NOR_ReadCFI_Handler(void)
         return MEM_FAIL;
     }
 
-    USBD_SetupReading(&PageBuffer[0], 128, NULL);
+    USBD_SetupReading(&PageBuffer[0], params->Count, NULL);
     return MEM_OK;
 }
 
@@ -90,6 +99,9 @@ static uint8_t NOR_ReadAutoSelect_Handler(void)
 {
     const NOR_ReadAutoSelect_Params *params = (const NOR_ReadAutoSelect_Params *)&ParamsStatusBuffer[0];
     HAL_StatusTypeDef status;
+    if (params->Count > PAGE_BUFFER_SIZE) {
+        return MEM_PARAMS;
+    }
     LED_Activity(1);
     status = NOR_ReadAutoSelect(&Handle, params->Address, (uint16_t *)&PageBuffer[0], params->Count / 2);
     LED_Activity(0);
@@ -110,6 +122,9 @@ typedef struct NOR_ReadStreamed_Params {
 static uint8_t NOR_ReadStreamed_Handler(void)
 {
     const NOR_ReadStreamed_Params *params = (const NOR_ReadStreamed_Params *)&ParamsStatusBuffer[0];
+    if (params->Address > 64*1024*1024) {
+        return MEM_PARAMS;
+    }
     /* Dummy read operation */
     NOR_ReadData(&Handle, params->Address, (uint16_t *)&PageBuffer[0]);
     /* Since NOR is memory-mapped, provide the buffer pointer directly */
@@ -136,6 +151,9 @@ static uint8_t NOR_BlankCheck_Handler(void)
     NOR_BlankCheck_Status *status = (NOR_BlankCheck_Status *)&ParamsStatusBuffer[0];
     uint16_t Temp;
     uint32_t Limit = params->Address + params->Count;
+    if (params->Address > 64*1024*1024) {
+        return MEM_PARAMS;
+    }
     for (uint32_t Address = params->Address; Address < Limit; Address += 2) {
         NOR_ReadData(&Handle, params->Address, &Temp);
         if (Temp != 0xFFFFU) {
@@ -158,6 +176,9 @@ static uint8_t NOR_EraseBlock_Handler(void)
 {
     const NOR_EraseBlock_Params *params = (const NOR_EraseBlock_Params *)&ParamsStatusBuffer[0];
     HAL_StatusTypeDef op_status;
+    if (params->Address > 64*1024*1024) {
+        return MEM_PARAMS;
+    }
     LED_Activity(1);
     op_status = NOR_EraseBlock(&Handle, params->Address);
     if (op_status != HAL_OK) {
@@ -296,6 +317,9 @@ static void NOR_ProgramStreamedCallback(void)
 static uint8_t NOR_ProgramStreamed_Handler(void)
 {
     const NOR_ProgramStreamed_Params *params = (const NOR_ProgramStreamed_Params *)&ParamsStatusBuffer[0];
+    if (params->Address > 64*1024*1024) {
+        return MEM_PARAMS;
+    }
     USBD_SetupWriting(&PageBuffer[0], MIN(params->Count, PAGE_BUFFER_SIZE), NOR_ProgramStreamedCallback);
     return MEM_OK;
 }
@@ -303,7 +327,7 @@ static uint8_t NOR_ProgramStreamed_Handler(void)
 
 const MD_CmdHanderEntry_t NOR_Handlers[] = {
     { 0x10, 0, NOR_ReadID_Handler },
-    { 0x11, 0, NOR_ReadCFI_Handler },
+    { 0x11, sizeof(NOR_ReadCFI_Params), NOR_ReadCFI_Handler },
     { 0x12, sizeof(NOR_ReadAutoSelect_Params), NOR_ReadAutoSelect_Handler },
     { 0x20, sizeof(NOR_ReadStreamed_Params), NOR_ReadStreamed_Handler },
     { 0x21, sizeof(NOR_BlankCheck_Params), NOR_BlankCheck_Handler },

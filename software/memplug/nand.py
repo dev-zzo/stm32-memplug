@@ -151,6 +151,7 @@ class NANDDevice(Device):
         """
         args = struct.pack("<IHH", address, page_size, count)
         self._command(0x20, args)
+        # each page is read separately
         pages = []
         for i in range(count):
             data = self._handle.bulkRead(1, page_size, self.data_timeout)
@@ -163,11 +164,9 @@ class NANDDevice(Device):
 
         address
             Row address of any page within the block to be erased
-        timeout
-            Operation timeout, in ms
         """
-        args = struct.pack("<II", address, timeout)
-        self._command(0x30, args, cmd_timeout=timeout+100)
+        args = struct.pack("<II", address, self.cmd_timeout)
+        self._command(0x30, args)
 
     def program_page(self, address, data):
         """
@@ -180,5 +179,23 @@ class NANDDevice(Device):
         timeout
             Operation timeout, in ms
         """
-        args = struct.pack("<IHHI", address, len(data), 1, timeout)
-        self._command(0x40, args, dataOut=data, data_timeout=timeout+100)
+        args = struct.pack("<IHHI", address, len(data), 1, self.cmd_timeout)
+        self._command(0x40, args, dataOut=data)
+
+    def program_pages(self, address, page_size, data):
+        """
+        Implements the PAGE PROGRAM command
+
+        address
+            Row address of the page to be programmed
+        data
+            Bytes to be programmed
+        timeout
+            Operation timeout, in ms
+        """
+        if len(data) % page_size:
+            raise ValueError("provided data length is not multiple of page size")
+        args = struct.pack("<IHHI", address, page_size, len(data) // page_size, self.cmd_timeout)
+        self._command(0x40, args)
+        for i in range(count):
+            data = self._handle.bulkWrite(1, data[i*page_size:(i+1)*page_size], self.data_timeout)

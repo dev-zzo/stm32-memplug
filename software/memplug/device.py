@@ -33,13 +33,13 @@ class Device(object):
         if self._context is not None:
             self._context.close()
 
-    def _command(self, id, args=b"", dataOut=None, countIn=None, cmd_timeout=None, data_timeout=None):
+    def _command(self, cmd_id, args=b"", dataOut=None, countIn=None, cmd_timeout=None, data_timeout=None):
         if cmd_timeout is None:
             cmd_timeout = self.cmd_timeout
         if data_timeout is None:
             data_timeout = self.data_timeout
         try:
-            self._handle.controlWrite(0x21, id, 0x0000, 0x0000, args, cmd_timeout)
+            self._handle.controlWrite(0x21, cmd_id, 0x0000, 0x0000, args, cmd_timeout)
         except USBErrorPipe:
             raise MemplugException("command failed")
         if dataOut is not None:

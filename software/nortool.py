@@ -10,6 +10,42 @@ import time
 
 from memplug import ProgressBar
 from memplug.nor import NORDevice, parse_cfi, print_cfi
+from hexdump import hexdump
+
+_id_data_to_name = {
+    "017E0201": "S29JL064J",
+    "017E0A01": "S29JL032J",
+    "017E2101": "S29GL128P",
+    "017E2201": "S29GL256P",
+    "017E2301": "S29GL512P",
+    "017E2801": "S29GL01GP",
+    "897E2201": "xx28F256M29EW",
+    "897E2301": "xx28F512M29EW",
+    "897E2801": "xx28F00AM29EW",
+    "897E4801": "xx28F00BM29EW",
+    "9D1B": "IS39LV512",
+    "9D1C": "IS39LV010",
+    "9D3E": "IS39LV040",
+    "9D7E2101": "IS29GL128",
+    "9D7E2201": "IS29GL256",
+    "C24F": "MX29LV040C",
+}
+
+def check_device_name(id_data):
+    """
+    Checks the registry against the device ID data and returns the device name.
+    Inputs:
+    - id_data: a bytearray
+    """
+    id_data = bytearray(id_data)
+    id_data = "".join(["%02X" % x for x in id_data])
+    try:
+        return _id_data_to_name[id_data[:4]]
+    except:
+        try:
+            return _id_data_to_name[id_data[:8]]
+        except:
+            return None
 
 def wordflip(b):
     c = bytearray()
@@ -135,6 +171,12 @@ def op_program(dev, args):
         p.finish()
     print("Operation took: %.3fs" % (time.time() - p.start))
 
+def op_dump_info(dev, args):
+    print("Autoselect data dump: ")
+    print(hexdump(dev.read_autoselect(0, 512), 'h'))
+    print("CFI data dump: ")
+    print(hexdump(dev.read_cfi(0, 512)))
+
 def op_noop(dev, args):
     pass
 
@@ -143,7 +185,7 @@ def from_hex(x):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.set_defaults(func=op_noop)
+    parser.set_defaults(func=op_dump_info)
     subparsers = parser.add_subparsers(title='subcommands', description='valid subcommands')
     
     subparser = subparsers.add_parser('read', help='read memory array')
@@ -211,16 +253,19 @@ def main():
         required=True,
         help='input file path')
     subparser.set_defaults(func=op_program)
+    
+    subparser = subparsers.add_parser('dump-info', help='read and hex-dump autoselect and CFI data')
+    subparser.set_defaults(func=op_dump_info)
 
     args = parser.parse_args()
     dev = NORDevice()
     try:
-        print("ID: " + dev.read_id().hex())
-        #print("AS: ")
-        #print(hexdump(dev.read_autoselect(0, 512)))
-        cfi_data = dev.read_cfi()
+        dev_id = dev.read_id()
+        print("ID: " + dev_id.hex())
+        print("Device: " + check_device_name(dev_id))
+        cfi_data = dev.read_cfi(0, 128)
         cfi = parse_cfi(cfi_data)
-        print_cfi(cfi)
+        #print_cfi(cfi)
         dev.cfi = cfi
         args.func(dev, args)
     finally:

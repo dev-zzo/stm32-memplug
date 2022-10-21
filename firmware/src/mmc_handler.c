@@ -11,6 +11,8 @@ HAL_StatusTypeDef MMC_Setup(void)
 {
     HAL_StatusTypeDef Status;
 
+    MEM_ControlRST(0);
+
     /* uSD device interface configuration */
     Handle.Instance = SDIO;
 

@@ -98,12 +98,12 @@ class NORDevice(Device):
         data = self._command(0x10, args, countIn=8)
         return bytearray([data[0], data[2], data[4], data[6]])
 
-    def read_cfi(self):
+    def read_cfi(self, address, count):
         """
         Reads the 128 words of CFI data and returns low-order bytes only.
         """
-        args = b""
-        return self._command(0x11, args, countIn=128)
+        args = struct.pack("<II", address, count)
+        return self._command(0x11, args, countIn=count)
 
     def read_autoselect(self, address, count):
         """

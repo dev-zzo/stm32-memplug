@@ -23,7 +23,7 @@ HAL_StatusTypeDef NAND_Setup(void)
     Init.Waitfeature     = FSMC_NAND_PCC_WAIT_FEATURE_ENABLE;
     Init.MemoryDataWidth = FSMC_NAND_PCC_MEM_BUS_WIDTH_8; /* Should be switchable */
     Init.EccComputation  = FSMC_NAND_ECC_DISABLE;
-    Init.ECCPageSize     = FSMC_NAND_ECC_PAGE_SIZE_512BYTE;
+    //Init.ECCPageSize     = FSMC_NAND_ECC_PAGE_SIZE_512BYTE;
     Init.TCLRSetupTime   = 1;
     Init.TARSetupTime    = 1;
 

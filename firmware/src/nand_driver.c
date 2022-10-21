@@ -1,6 +1,8 @@
 #include "nand_driver.h"
 #include "debug.h"
 
+extern void MEM_ControlRST(int state);
+
 #define DEBUG_ME 0
 
 #define USE_DMA 1
@@ -121,7 +123,7 @@ static HAL_StatusTypeDef NAND_WritePageAddress(NAND_Handle_t *Handle, uint32_t A
     return NAND_WriteRowAddress(Handle, Address);
 }
 
-/* NOR API implementations ------------------------------------------------ */
+/* NAND API implementations ------------------------------------------------ */
 
 HAL_StatusTypeDef NAND_Init(
     NAND_Handle_t *Handle,
@@ -146,6 +148,8 @@ HAL_StatusTypeDef NAND_Init(
     }
     Handle->BusWidth = Init->MemoryDataWidth;
 
+    MEM_ControlRST(0);
+
 #if USE_DMA
     __HAL_RCC_DMA1_CLK_ENABLE();
     DmaHandle.Init.Direction = DMA_MEMORY_TO_MEMORY;
@@ -155,11 +159,11 @@ HAL_StatusTypeDef NAND_Init(
     DmaHandle.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
     DmaHandle.Init.Mode = DMA_NORMAL;
     DmaHandle.Init.Priority = DMA_PRIORITY_HIGH;
-    DmaHandle.Instance = DMA1_Channel1; 
+    DmaHandle.Instance = DMA1_Channel1;
     if (HAL_DMA_Init(&DmaHandle) != HAL_OK) {
         DEBUG_PrintString("DMA init failed\n");
         return HAL_ERROR;
-    } 
+    }
 #endif
 
     /* SIDE NOTE:

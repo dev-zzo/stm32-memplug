@@ -6,6 +6,7 @@
 typedef enum {
     MEM_OK,
     MEM_FAIL,
+    MEM_PARAMS,
     MEM_TIMEOUT,
 } MD_Status_t;
 

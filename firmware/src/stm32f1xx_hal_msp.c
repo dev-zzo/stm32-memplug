@@ -54,11 +54,12 @@ void HAL_MspInit(void)
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOA_RELEASE_RESET();
 
+    /* Init the RESET output */
     gpio.Pin = GPIO_PIN_8;
     gpio.Mode = GPIO_MODE_OUTPUT_PP;
     gpio.Speed = GPIO_SPEED_FREQ_MEDIUM;
     HAL_GPIO_Init(GPIOA, &gpio);
-
+    /* Set the RESET output to active */
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 }
 
@@ -107,8 +108,6 @@ void HAL_MMC_MspInit(MMC_HandleTypeDef* hmmc)
 
     gpio.Pin = GPIO_PIN_2;  /* CMD */
     HAL_GPIO_Init(GPIOD, &gpio);
-
-    MEM_ControlRST(0);
 }
 
 /**
@@ -200,8 +199,6 @@ void NOR_MspInit(NOR_Handle_t *hnor)
     gpio.Mode = GPIO_MODE_INPUT;
     gpio.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(GPIOD, &gpio);
-
-    MEM_ControlRST(0);
 }
 
 /**
@@ -261,6 +258,4 @@ void NAND_MspInit(NAND_Handle_t *hnand)
     gpio.Mode = GPIO_MODE_INPUT;
     gpio.Pin = GPIO_PIN_6;  /* R/B */
     HAL_GPIO_Init(GPIOD, &gpio);
-
-    MEM_ControlRST(0);
 }

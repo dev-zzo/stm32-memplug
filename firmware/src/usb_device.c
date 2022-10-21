@@ -247,47 +247,6 @@ uint8_t USBD_ClassCfgFSDesc[32]  __ALIGN_END =
     0x00     /*Polling interval in milliseconds*/
 };
 
-__ALIGN_BEGIN uint8_t USBD_ClassOtherSpeedCfgDesc[32]   __ALIGN_END  =
-{
-    0x09,   /* bLength: Configuation Descriptor size */
-    USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION,
-    32,
-
-    0x00,
-    0x01,   /* bNumInterfaces: 1 interface */
-    0x01,   /* bConfigurationValue: */
-    0x04,   /* iConfiguration: */
-    0xC0,   /* bmAttributes: */
-    0x32,   /* MaxPower 100 mA */
-
-    /******************** Interface ********************/
-    0x09,   /* bLength: Interface Descriptor size */
-    0x04,   /* bDescriptorType: */
-    0x00,   /* bInterfaceNumber: Number of Interface */
-    0x00,   /* bAlternateSetting: Alternate setting */
-    0x00,   /* bNumEndpoints*/
-    0xFF,   /* bInterfaceClass: Vendor-specific */
-    0xFF,   /* bInterfaceSubClass: Vendor-specific */
-    0x00,   /* nInterfaceProtocol */
-    0x05,   /* iInterface */
-    /********************  Endpoints ********************/
-    0x07,   /*Endpoint descriptor length = 7*/
-    0x05,   /*Endpoint descriptor type */
-    BULK_EPIN_ADDR,   /*Endpoint address (IN, address 1) */
-    0x02,   /*Bulk endpoint type */
-    BULK_PACKET_SIZE,   /*Max packet*/
-    0x00,
-    0x00,   /*Polling interval in milliseconds */
-
-    0x07,   /*Endpoint descriptor length = 7 */
-    0x05,   /*Endpoint descriptor type */
-    BULK_EPOUT_ADDR,   /*Endpoint address (OUT, address 1) */
-    0x02,   /*Bulk endpoint type */
-    BULK_PACKET_SIZE,   /*Max packet*/
-    0x00,
-    0x00     /*Polling interval in milliseconds*/
-};
-
 uint8_t *USBD_ClassGetHSCfgDesc(uint16_t *length)
 {
     *length = sizeof (USBD_ClassCfgFSDesc);
@@ -302,8 +261,8 @@ uint8_t *USBD_ClassGetFSCfgDesc(uint16_t *length)
 
 uint8_t *USBD_ClassGetOtherSpeedCfgDesc(uint16_t *length)
 {
-    *length = sizeof (USBD_ClassOtherSpeedCfgDesc);
-    return USBD_ClassOtherSpeedCfgDesc;
+    *length = sizeof (USBD_ClassCfgFSDesc);
+    return USBD_ClassCfgFSDesc;
 }
 
 USBD_ClassTypeDef USBD_CustomClass = {

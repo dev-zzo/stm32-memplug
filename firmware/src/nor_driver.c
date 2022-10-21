@@ -1,6 +1,8 @@
 #include "nor_driver.h"
 #include "debug.h"
 
+extern void MEM_ControlRST(int state);
+
 #define DEBUG_ME 0
 
 #define NOR_BANK_BASE_1 0x60000000U
@@ -23,10 +25,11 @@
 #define NOR_INTEL_DATA_COMMAND_SET            (uint16_t)0x0210 /* Not Supported in this driver */
 
 /* Auto select defines */
-#define NOR_AUTO_SELECT_MANUFACTURER 0x0000U
-#define NOR_AUTO_SELECT_DEVICE_1    0x0001U
-#define NOR_AUTO_SELECT_DEVICE_2    0x000EU
-#define NOR_AUTO_SELECT_DEVICE_3    0x000FU
+#define NOR_AUTO_SELECT_MANUFACTURER    0x0000U
+#define NOR_AUTO_SELECT_DEVICE_1        0x0001U
+#define NOR_AUTO_SELECT_SECTOR_PROTECT  0x0002U
+#define NOR_AUTO_SELECT_DEVICE_2        0x000EU
+#define NOR_AUTO_SELECT_DEVICE_3        0x000FU
 
 /* Helper function implementations ---------------------------------------- */
 
@@ -67,7 +70,7 @@ static inline uint16_t NOR_ReadWordAdj(NOR_Handle_t *Handle, uintptr_t Address)
 static void NOR_Execute_ReadCFI(NOR_Handle_t *Handle)
 {
 #if DEBUG_ME
-    DEBUG_PrintString("ReadCFI\n");
+    DEBUG_PrintString("ReadCFI ");
 #endif
     NOR_WriteWordAdj(Handle, 0x0055U, 0x98U);
 }
@@ -75,7 +78,7 @@ static void NOR_Execute_ReadCFI(NOR_Handle_t *Handle)
 static void NOR_Execute_Unlock_0002(NOR_Handle_t *Handle)
 {
 #if DEBUG_ME
-    DEBUG_PrintString("Unlock\n");
+    DEBUG_PrintString("Unlock ");
 #endif
     NOR_WriteWordAdj(Handle, 0x0555U, 0xAAU);
     NOR_WriteWordAdj(Handle, 0x02AAU, 0x55U);
@@ -93,7 +96,7 @@ static void NOR_Execute_AutoSelect_0002(NOR_Handle_t *Handle)
 {
     NOR_Execute_Unlock_0002(Handle);
 #if DEBUG_ME
-    DEBUG_PrintString("AutoSelect\n");
+    DEBUG_PrintString("AutoSelect ");
 #endif
     NOR_WriteWordAdj(Handle, 0x0555U, 0x90U);
 }
@@ -106,7 +109,7 @@ static void NOR_Execute_Program_0002(NOR_Handle_t *Handle, uint32_t Address, uin
     DEBUG_PrintU32(Address);
     DEBUG_PrintChar(':');
     DEBUG_PrintU16(Data);
-    DEBUG_PrintChar('\n');
+    DEBUG_PrintChar(' ');
 #endif
     NOR_WriteWordAdj(Handle, 0x0555U, 0xA0U);
     __IO uint16_t *p = (__IO uint16_t *)(Handle->BankBase + Address);
@@ -124,7 +127,7 @@ static void NOR_Execute_ProgramBuffer_0002(NOR_Handle_t *Handle, uint32_t Addres
     DEBUG_PrintU32((uint32_t)Data);
     DEBUG_PrintChar(':');
     DEBUG_PrintU32(WordCount);
-    DEBUG_PrintChar('\n');
+    DEBUG_PrintChar(' ');
 #endif
     NOR_WriteWord(Handle, Address, 0x25U);
     NOR_WriteWord(Handle, Address, WordCount-1);
@@ -136,11 +139,22 @@ static void NOR_Execute_ProgramBuffer_0002(NOR_Handle_t *Handle, uint32_t Addres
     NOR_WriteWord(Handle, Address, 0x29U);
 }
 
+static void NOR_Execute_EraseSector_0002(NOR_Handle_t *Handle, uint32_t Address)
+{
+    NOR_Execute_Unlock_0002(Handle);
+#if DEBUG_ME
+    DEBUG_PrintString("EraseSector ");
+#endif
+    NOR_WriteWordAdj(Handle, 0x0555U, 0x80U);
+    NOR_Execute_Unlock_0002(Handle);
+    NOR_WriteWord(Handle, Address, 0x50U);
+}
+
 static void NOR_Execute_EraseBlock_0002(NOR_Handle_t *Handle, uint32_t Address)
 {
     NOR_Execute_Unlock_0002(Handle);
 #if DEBUG_ME
-    DEBUG_PrintString("EraseBlock\n");
+    DEBUG_PrintString("EraseBlock ");
 #endif
     NOR_WriteWordAdj(Handle, 0x0555U, 0x80U);
     NOR_Execute_Unlock_0002(Handle);
@@ -151,7 +165,7 @@ static void NOR_Execute_EraseChip_0002(NOR_Handle_t *Handle)
 {
     NOR_Execute_Unlock_0002(Handle);
 #if DEBUG_ME
-    DEBUG_PrintString("EraseChip\n");
+    DEBUG_PrintString("EraseChip ");
 #endif
     NOR_WriteWordAdj(Handle, 0x0555U, 0x80U);
     NOR_Execute_Unlock_0002(Handle);
@@ -216,6 +230,9 @@ HAL_StatusTypeDef NOR_Init(
         default: return HAL_ERROR;
     }
 
+    MEM_ControlRST(0);
+    //HAL_Delay(2);
+
     /* Figure out which command set it is */
     NOR_Execute_ReadCFI(Handle);
     uint16_t CommandSetID = NOR_ReadWordAdj(Handle, NOR_CFI_COMMAND_SET_OFFSET);
@@ -242,6 +259,7 @@ HAL_StatusTypeDef NOR_ReadID(NOR_Handle_t *Handle, NOR_IDTypeDef *Data)
     Handle->CommandSet->AutoSelect(Handle);
     Data->Manufacturer_Code = NOR_ReadWordAdj(Handle, NOR_AUTO_SELECT_MANUFACTURER);
     Data->Device_Code1      = NOR_ReadWordAdj(Handle, NOR_AUTO_SELECT_DEVICE_1);
+    /* These are valid only if code1 is 7E */
     Data->Device_Code2      = NOR_ReadWordAdj(Handle, NOR_AUTO_SELECT_DEVICE_2);
     Data->Device_Code3      = NOR_ReadWordAdj(Handle, NOR_AUTO_SELECT_DEVICE_3);
     Handle->CommandSet->Reset(Handle);
